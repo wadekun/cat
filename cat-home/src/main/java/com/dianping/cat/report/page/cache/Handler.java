@@ -19,17 +19,18 @@ import com.dianping.cat.consumer.event.EventAnalyzer;
 import com.dianping.cat.consumer.event.model.entity.EventReport;
 import com.dianping.cat.consumer.transaction.TransactionAnalyzer;
 import com.dianping.cat.consumer.transaction.model.entity.TransactionReport;
+import com.dianping.cat.mvc.PayloadNormalizer;
 import com.dianping.cat.report.ReportPage;
 import com.dianping.cat.report.graph.PieChart;
 import com.dianping.cat.report.graph.PieChart.Item;
-import com.dianping.cat.report.page.PayloadNormalizer;
 import com.dianping.cat.report.page.cache.CacheReport.CacheNameItem;
-import com.dianping.cat.report.page.model.spi.ModelService;
-import com.dianping.cat.report.page.transaction.AllMachineMerger;
-import com.dianping.cat.report.page.transaction.AllNameMerger;
-import com.dianping.cat.report.service.ReportServiceManager;
-import com.dianping.cat.service.ModelRequest;
-import com.dianping.cat.service.ModelResponse;
+import com.dianping.cat.report.page.event.service.EventReportService;
+import com.dianping.cat.report.page.transaction.service.TransactionReportService;
+import com.dianping.cat.report.page.transaction.transform.AllMachineMerger;
+import com.dianping.cat.report.page.transaction.transform.AllNameMerger;
+import com.dianping.cat.report.service.ModelRequest;
+import com.dianping.cat.report.service.ModelResponse;
+import com.dianping.cat.report.service.ModelService;
 
 public class Handler implements PageHandler<Context> {
 
@@ -40,7 +41,10 @@ public class Handler implements PageHandler<Context> {
 	private JspViewer m_jspViewer;
 
 	@Inject
-	private ReportServiceManager m_reportService;
+	private TransactionReportService m_transactionReportService;
+
+	@Inject
+	private EventReportService m_eventReportService;
 
 	@Inject
 	private PayloadNormalizer m_normalizePayload;
@@ -82,7 +86,7 @@ public class Handler implements PageHandler<Context> {
 		Date start = payload.getHistoryStartDate();
 		Date end = payload.getHistoryEndDate();
 
-		return m_reportService.queryEventReport(domain, start, end);
+		return m_eventReportService.queryReport(domain, start, end);
 	}
 
 	private TransactionReport getHistoryTransactionReport(Payload payload) {
@@ -90,7 +94,7 @@ public class Handler implements PageHandler<Context> {
 		Date start = payload.getHistoryStartDate();
 		Date end = payload.getHistoryEndDate();
 
-		return m_reportService.queryTransactionReport(domain, start, end);
+		return m_transactionReportService.queryReport(domain, start, end);
 	}
 
 	private EventReport getHourlyEventReport(Payload payload) {
@@ -112,13 +116,13 @@ public class Handler implements PageHandler<Context> {
 			eventReport = response.getModel();
 		}
 		if (Constants.ALL.equalsIgnoreCase(ipAddress)) {
-			com.dianping.cat.report.page.event.AllMachineMerger allEvent = new com.dianping.cat.report.page.event.AllMachineMerger();
+			com.dianping.cat.report.page.event.transform.AllMachineMerger allEvent = new com.dianping.cat.report.page.event.transform.AllMachineMerger();
 
 			allEvent.visitEventReport(eventReport);
 			eventReport = allEvent.getReport();
 		}
 		if (Constants.ALL.equalsIgnoreCase(type)) {
-			com.dianping.cat.report.page.event.AllNameMerger allEvent = new com.dianping.cat.report.page.event.AllNameMerger();
+			com.dianping.cat.report.page.event.transform.AllNameMerger allEvent = new com.dianping.cat.report.page.event.transform.AllNameMerger();
 
 			allEvent.visitEventReport(eventReport);
 			eventReport = allEvent.getReport();
@@ -138,9 +142,9 @@ public class Handler implements PageHandler<Context> {
 		if (StringUtils.isNotEmpty(type)) {
 			request.setProperty("type", type);
 		}
-		
+
 		ModelResponse<TransactionReport> response = m_transactionService.invoke(request);
-		
+
 		transactionReport = response.getModel();
 
 		if (Constants.ALL.equalsIgnoreCase(ipAddress)) {
@@ -199,6 +203,7 @@ public class Handler implements PageHandler<Context> {
 
 	private void normalize(Model model, Payload payload) {
 		m_normalizePayload.normalize(model, payload);
+		model.setAction(payload.getAction());
 		model.setPage(ReportPage.CACHE);
 		model.setQueryName(payload.getQueryName());
 	}

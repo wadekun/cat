@@ -9,28 +9,21 @@ import java.util.Map.Entry;
 import org.unidal.lookup.annotation.Inject;
 import org.unidal.tuple.Pair;
 
-import com.dianping.cat.configuration.ServerConfigManager;
+import com.dianping.cat.config.server.ServerConfigManager;
 import com.dianping.cat.consumer.state.model.entity.StateReport;
 import com.dianping.cat.helper.TimeHelper;
 import com.dianping.cat.report.graph.LineChart;
 import com.dianping.cat.report.graph.PieChart;
 import com.dianping.cat.report.graph.PieChart.Item;
-import com.dianping.cat.report.service.ReportServiceManager;
+import com.dianping.cat.report.page.state.service.StateReportService;
 
 public class StateGraphBuilder {
 
 	@Inject
-	private ReportServiceManager m_reportService;
+	private StateReportService m_reportService;
 
 	@Inject
 	private ServerConfigManager m_configManager;
-
-	public Pair<LineChart, PieChart> buildGraph(Payload payload, String key, StateReport report) {
-		String domain = payload.getDomain();
-		String ips = payload.getIpAddress();
-
-		return buildHourlyGraph(report, domain, key, ips);
-	}
 
 	public Pair<LineChart, PieChart> buildGraph(Payload payload, String key) {
 		String domain = payload.getDomain();
@@ -39,6 +32,13 @@ public class StateGraphBuilder {
 		String ips = payload.getIpAddress();
 
 		return buildHistoryGraph(domain, start, end, key, ips);
+	}
+
+	public Pair<LineChart, PieChart> buildGraph(Payload payload, String key, StateReport report) {
+		String domain = payload.getDomain();
+		String ips = payload.getIpAddress();
+
+		return buildHourlyGraph(report, domain, key, ips);
 	}
 
 	private Pair<LineChart, PieChart> buildHistoryGraph(String domain, Date start, Date end, String key, String ip) {
@@ -54,7 +54,7 @@ public class StateGraphBuilder {
 			step = TimeHelper.ONE_DAY;
 		}
 		for (long date = start.getTime(); date < end.getTime(); date += step) {
-			StateReport report = m_reportService.queryStateReport(domain, new Date(date), new Date(date + step));
+			StateReport report = m_reportService.queryReport(domain, new Date(date), new Date(date + step));
 
 			report.accept(builder);
 			report.accept(visitor);
@@ -82,7 +82,7 @@ public class StateGraphBuilder {
 		StateDistirbutionVisitor visitor = new StateDistirbutionVisitor(key);
 
 		visitor.visitStateReport(report);
-		
+
 		Map<String, Double> distributes = visitor.getDistribute();
 		PieChart piechart = buildPiechart(distributes);
 

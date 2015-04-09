@@ -9,8 +9,8 @@ import org.unidal.lookup.configuration.Component;
 import com.dianping.cat.config.aggregation.AggregationConfigManager;
 import com.dianping.cat.config.app.AppConfigManager;
 import com.dianping.cat.config.content.ContentFetcher;
+import com.dianping.cat.config.server.ServerConfigManager;
 import com.dianping.cat.config.url.UrlPatternConfigManager;
-import com.dianping.cat.configuration.ServerConfigManager;
 import com.dianping.cat.consumer.config.ProductLineConfigManager;
 import com.dianping.cat.consumer.heartbeat.HeartbeatAnalyzer;
 import com.dianping.cat.consumer.metric.MetricAnalyzer;
@@ -28,14 +28,23 @@ import com.dianping.cat.report.alert.DataChecker;
 import com.dianping.cat.report.alert.DefaultDataChecker;
 import com.dianping.cat.report.alert.MetricReportGroupService;
 import com.dianping.cat.report.alert.app.AppAlert;
+import com.dianping.cat.report.alert.app.AppRuleConfigManager;
 import com.dianping.cat.report.alert.business.BusinessAlert;
+import com.dianping.cat.report.alert.business.BusinessRuleConfigManager;
 import com.dianping.cat.report.alert.database.DatabaseAlert;
+import com.dianping.cat.report.alert.database.DatabaseRuleConfigManager;
 import com.dianping.cat.report.alert.exception.AlertExceptionBuilder;
 import com.dianping.cat.report.alert.exception.ExceptionAlert;
+import com.dianping.cat.report.alert.exception.ExceptionRuleConfigManager;
 import com.dianping.cat.report.alert.exception.FrontEndExceptionAlert;
 import com.dianping.cat.report.alert.heartbeat.HeartbeatAlert;
+import com.dianping.cat.report.alert.heartbeat.HeartbeatRuleConfigManager;
 import com.dianping.cat.report.alert.network.NetworkAlert;
+import com.dianping.cat.report.alert.network.NetworkRuleConfigManager;
 import com.dianping.cat.report.alert.sender.AlertManager;
+import com.dianping.cat.report.alert.sender.config.AlertConfigManager;
+import com.dianping.cat.report.alert.sender.config.AlertPolicyManager;
+import com.dianping.cat.report.alert.sender.config.SenderConfigManager;
 import com.dianping.cat.report.alert.sender.decorator.AppDecorator;
 import com.dianping.cat.report.alert.sender.decorator.BusinessDecorator;
 import com.dianping.cat.report.alert.sender.decorator.DatabaseDecorator;
@@ -45,7 +54,7 @@ import com.dianping.cat.report.alert.sender.decorator.ExceptionDecorator;
 import com.dianping.cat.report.alert.sender.decorator.FrontEndExceptionDecorator;
 import com.dianping.cat.report.alert.sender.decorator.HeartbeatDecorator;
 import com.dianping.cat.report.alert.sender.decorator.NetworkDecorator;
-import com.dianping.cat.report.alert.sender.decorator.StorageDatabaseDecorator;
+import com.dianping.cat.report.alert.sender.decorator.StorageSQLDecorator;
 import com.dianping.cat.report.alert.sender.decorator.SystemDecorator;
 import com.dianping.cat.report.alert.sender.decorator.ThirdpartyDecorator;
 import com.dianping.cat.report.alert.sender.decorator.TransactionDecorator;
@@ -59,7 +68,7 @@ import com.dianping.cat.report.alert.sender.receiver.ExceptionContactor;
 import com.dianping.cat.report.alert.sender.receiver.FrontEndExceptionContactor;
 import com.dianping.cat.report.alert.sender.receiver.HeartbeatContactor;
 import com.dianping.cat.report.alert.sender.receiver.NetworkContactor;
-import com.dianping.cat.report.alert.sender.receiver.StorageDatabaseContactor;
+import com.dianping.cat.report.alert.sender.receiver.StorageSQLContactor;
 import com.dianping.cat.report.alert.sender.receiver.SystemContactor;
 import com.dianping.cat.report.alert.sender.receiver.ThirdpartyContactor;
 import com.dianping.cat.report.alert.sender.receiver.TransactionContactor;
@@ -75,7 +84,8 @@ import com.dianping.cat.report.alert.sender.spliter.Spliter;
 import com.dianping.cat.report.alert.sender.spliter.SpliterManager;
 import com.dianping.cat.report.alert.sender.spliter.WeixinSpliter;
 import com.dianping.cat.report.alert.service.AlertEntityService;
-import com.dianping.cat.report.alert.storage.StorageDatabaseAlert;
+import com.dianping.cat.report.alert.storage.StorageSQLAlert;
+import com.dianping.cat.report.alert.storage.StorageSQLRuleConfigManager;
 import com.dianping.cat.report.alert.summary.AlertSummaryExecutor;
 import com.dianping.cat.report.alert.summary.AlertSummaryService;
 import com.dianping.cat.report.alert.summary.build.AlertInfoBuilder;
@@ -84,36 +94,26 @@ import com.dianping.cat.report.alert.summary.build.AlterationSummaryBuilder;
 import com.dianping.cat.report.alert.summary.build.FailureSummaryBuilder;
 import com.dianping.cat.report.alert.summary.build.SummaryBuilder;
 import com.dianping.cat.report.alert.system.SystemAlert;
+import com.dianping.cat.report.alert.system.SystemRuleConfigManager;
 import com.dianping.cat.report.alert.thirdParty.HttpConnector;
 import com.dianping.cat.report.alert.thirdParty.ThirdPartyAlert;
 import com.dianping.cat.report.alert.thirdParty.ThirdPartyAlertBuilder;
+import com.dianping.cat.report.alert.thirdParty.ThirdPartyConfigManager;
 import com.dianping.cat.report.alert.transaction.TransactionAlert;
+import com.dianping.cat.report.alert.transaction.TransactionRuleConfigManager;
 import com.dianping.cat.report.alert.web.WebAlert;
+import com.dianping.cat.report.alert.web.WebRuleConfigManager;
+import com.dianping.cat.report.page.app.service.AppDataService;
 import com.dianping.cat.report.page.dependency.graph.TopologyGraphManager;
-import com.dianping.cat.report.page.model.spi.ModelService;
-import com.dianping.cat.report.page.storage.StorageMergeHelper;
+import com.dianping.cat.report.page.heartbeat.config.HeartbeatDisplayPolicyManager;
+import com.dianping.cat.report.page.metric.service.BaselineService;
+import com.dianping.cat.report.page.storage.config.StorageGroupConfigManager;
 import com.dianping.cat.report.page.storage.topology.StorageAlertInfoRTContainer;
-import com.dianping.cat.report.page.storage.topology.StorageGraphBuilder;
-import com.dianping.cat.report.page.transaction.TransactionMergeHelper;
-import com.dianping.cat.report.service.BaselineService;
-import com.dianping.cat.report.service.app.AppDataService;
+import com.dianping.cat.report.page.storage.topology.StorageAlertInfoBuilder;
+import com.dianping.cat.report.page.storage.transform.StorageMergeHelper;
+import com.dianping.cat.report.page.transaction.transform.TransactionMergeHelper;
+import com.dianping.cat.report.service.ModelService;
 import com.dianping.cat.service.ProjectService;
-import com.dianping.cat.system.config.AlertConfigManager;
-import com.dianping.cat.system.config.AlertPolicyManager;
-import com.dianping.cat.system.config.AppRuleConfigManager;
-import com.dianping.cat.system.config.BusinessRuleConfigManager;
-import com.dianping.cat.system.config.DatabaseRuleConfigManager;
-import com.dianping.cat.system.config.ExceptionRuleConfigManager;
-import com.dianping.cat.system.config.HeartbeatDisplayPolicyManager;
-import com.dianping.cat.system.config.HeartbeatRuleConfigManager;
-import com.dianping.cat.system.config.NetworkRuleConfigManager;
-import com.dianping.cat.system.config.SenderConfigManager;
-import com.dianping.cat.system.config.StorageDatabaseRuleConfigManager;
-import com.dianping.cat.system.config.StorageGroupConfigManager;
-import com.dianping.cat.system.config.SystemRuleConfigManager;
-import com.dianping.cat.system.config.ThirdPartyConfigManager;
-import com.dianping.cat.system.config.TransactionRuleConfigManager;
-import com.dianping.cat.system.config.WebRuleConfigManager;
 
 public class AlarmComponentConfigurator extends AbstractResourceConfigurator {
 	@Override
@@ -157,8 +157,7 @@ public class AlarmComponentConfigurator extends AbstractResourceConfigurator {
 		all.add(C(Contactor.class, TransactionContactor.ID, TransactionContactor.class).req(ProjectService.class,
 		      AlertConfigManager.class));
 
-		all.add(C(Contactor.class, StorageDatabaseContactor.ID, StorageDatabaseContactor.class).req(ProjectService.class,
-		      AlertConfigManager.class));
+		all.add(C(Contactor.class, StorageSQLContactor.ID, StorageSQLContactor.class).req(AlertConfigManager.class));
 
 		all.add(C(ContactorManager.class));
 
@@ -186,7 +185,7 @@ public class AlarmComponentConfigurator extends AbstractResourceConfigurator {
 
 		all.add(C(Decorator.class, TransactionDecorator.ID, TransactionDecorator.class));
 
-		all.add(C(Decorator.class, StorageDatabaseDecorator.ID, StorageDatabaseDecorator.class));
+		all.add(C(Decorator.class, StorageSQLDecorator.ID, StorageSQLDecorator.class));
 
 		all.add(C(DecoratorManager.class));
 
@@ -202,7 +201,7 @@ public class AlarmComponentConfigurator extends AbstractResourceConfigurator {
 
 		all.add(C(StorageAlertInfoRTContainer.class));
 
-		all.add(C(StorageGraphBuilder.class));
+		all.add(C(StorageAlertInfoBuilder.class));
 
 		all.add(C(Sender.class, MailSender.ID, MailSender.class).req(SenderConfigManager.class));
 
@@ -245,9 +244,9 @@ public class AlarmComponentConfigurator extends AbstractResourceConfigurator {
 		all.add(C(TransactionAlert.class).req(TransactionMergeHelper.class, DataChecker.class, AlertManager.class)
 		      .req(ModelService.class, TransactionAnalyzer.ID).req(TransactionRuleConfigManager.class));
 
-		all.add(C(StorageDatabaseAlert.class).req(StorageMergeHelper.class, DataChecker.class, AlertManager.class)
+		all.add(C(StorageSQLAlert.class).req(StorageMergeHelper.class, DataChecker.class, AlertManager.class)
 		      .req(ModelService.class, StorageAnalyzer.ID)
-		      .req(StorageDatabaseRuleConfigManager.class, StorageGroupConfigManager.class, StorageGraphBuilder.class));
+		      .req(StorageSQLRuleConfigManager.class, StorageGroupConfigManager.class, StorageAlertInfoBuilder.class));
 
 		all.add(C(AlertExceptionBuilder.class).req(ExceptionRuleConfigManager.class, AggregationConfigManager.class));
 
@@ -270,21 +269,19 @@ public class AlarmComponentConfigurator extends AbstractResourceConfigurator {
 
 		all.add(C(AlertSummaryService.class).req(AlertSummaryDao.class));
 
-		all.add(C(SummaryBuilder.class, RelatedSummaryBuilder.ID, RelatedSummaryBuilder.class)
-		      .req(AlertInfoBuilder.class, AlertSummaryService.class));
+		all.add(C(SummaryBuilder.class, RelatedSummaryBuilder.ID, RelatedSummaryBuilder.class).req(
+		      AlertInfoBuilder.class, AlertSummaryService.class));
 
-		all.add(C(SummaryBuilder.class, FailureSummaryBuilder.ID, FailureSummaryBuilder.class)
-		      .req(ModelService.class, ProblemAnalyzer.ID));
+		all.add(C(SummaryBuilder.class, FailureSummaryBuilder.ID, FailureSummaryBuilder.class).req(ModelService.class,
+		      ProblemAnalyzer.ID));
 
-		all.add(C(SummaryBuilder.class, AlterationSummaryBuilder.ID,
-		      AlterationSummaryBuilder.class).req(AlterationDao.class));
+		all.add(C(SummaryBuilder.class, AlterationSummaryBuilder.ID, AlterationSummaryBuilder.class).req(
+		      AlterationDao.class));
 
-		all.add(C(AlertSummaryExecutor.class)
-		      .req(SenderManager.class)
+		all.add(C(AlertSummaryExecutor.class).req(SenderManager.class)
 		      .req(SummaryBuilder.class, RelatedSummaryBuilder.ID, "m_relatedBuilder")
 		      .req(SummaryBuilder.class, FailureSummaryBuilder.ID, "m_failureBuilder")
-		      .req(SummaryBuilder.class, AlterationSummaryBuilder.ID,
-		            "m_alterationBuilder"));
+		      .req(SummaryBuilder.class, AlterationSummaryBuilder.ID, "m_alterationBuilder"));
 
 		return all;
 	}

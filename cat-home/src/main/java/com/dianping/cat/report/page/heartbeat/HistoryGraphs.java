@@ -18,13 +18,13 @@ import com.dianping.cat.helper.JsonBuilder;
 import com.dianping.cat.helper.TimeHelper;
 import com.dianping.cat.report.graph.LineChart;
 import com.dianping.cat.report.page.BaseHistoryGraphs;
-import com.dianping.cat.report.service.ReportServiceManager;
-import com.dianping.cat.system.config.HeartbeatDisplayPolicyManager;
+import com.dianping.cat.report.page.heartbeat.config.HeartbeatDisplayPolicyManager;
+import com.dianping.cat.report.page.heartbeat.service.HeartbeatReportService;
 
 public class HistoryGraphs extends BaseHistoryGraphs {
 
 	@Inject
-	private ReportServiceManager m_reportService;
+	private HeartbeatReportService m_reportService;
 
 	@Inject
 	private HeartbeatDisplayPolicyManager m_manager;
@@ -93,7 +93,7 @@ public class HistoryGraphs extends BaseHistoryGraphs {
 			for (String metric : currentExtension.getDetails().keySet()) {
 				m_extensionMetrics.add(metric);
 				double value = currentExtension.findDetail(metric).getValue();
-				int unit = m_manager.queryUnit(group,metric);
+				int unit = m_manager.queryUnit(group, metric);
 				double actualValue = value / unit;
 
 				updateMetricArray(datas, minute, metric, actualValue);
@@ -143,7 +143,7 @@ public class HistoryGraphs extends BaseHistoryGraphs {
 		Date start = payload.getHistoryStartDate();
 		Date end = payload.getHistoryEndDate();
 		int size = (int) ((end.getTime() - start.getTime()) / TimeHelper.ONE_HOUR * 60);
-		HeartbeatReport report = m_reportService.queryHeartbeatReport(payload.getDomain(), start, end);
+		HeartbeatReport report = m_reportService.queryReport(payload.getDomain(), start, end);
 		Map<String, double[]> graphData = buildHeartbeatDatas(report, payload.getIpAddress());
 
 		String groupName = payload.getExtensionType();

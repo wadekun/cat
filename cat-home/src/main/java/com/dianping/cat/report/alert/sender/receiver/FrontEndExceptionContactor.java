@@ -1,7 +1,5 @@
 package com.dianping.cat.report.alert.sender.receiver;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +9,7 @@ import com.dianping.cat.config.aggregation.AggregationConfigManager;
 import com.dianping.cat.configuration.aggreation.model.entity.AggregationRule;
 import com.dianping.cat.home.alert.config.entity.Receiver;
 import com.dianping.cat.report.alert.AlertType;
-import com.dianping.cat.system.config.AlertConfigManager;
+import com.dianping.cat.report.alert.sender.config.AlertConfigManager;
 
 public class FrontEndExceptionContactor extends DefaultContactor implements Contactor {
 
@@ -22,8 +20,6 @@ public class FrontEndExceptionContactor extends DefaultContactor implements Cont
 	protected AlertConfigManager m_alertConfigManager;
 
 	public static final String ID = AlertType.FrontEndException.getName();
-
-	protected DateFormat m_linkFormat = new SimpleDateFormat("yyyyMMddHH");
 
 	@Override
 	public String getId() {

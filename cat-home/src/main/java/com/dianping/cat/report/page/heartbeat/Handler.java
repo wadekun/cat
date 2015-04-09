@@ -23,15 +23,15 @@ import com.dianping.cat.consumer.heartbeat.model.entity.Machine;
 import com.dianping.cat.consumer.heartbeat.model.entity.Period;
 import com.dianping.cat.helper.SortHelper;
 import com.dianping.cat.helper.TimeHelper;
+import com.dianping.cat.mvc.PayloadNormalizer;
 import com.dianping.cat.report.ReportPage;
 import com.dianping.cat.report.graph.svg.GraphBuilder;
-import com.dianping.cat.report.page.PayloadNormalizer;
-import com.dianping.cat.report.page.model.spi.ModelService;
-import com.dianping.cat.report.service.ReportServiceManager;
-import com.dianping.cat.service.ModelPeriod;
-import com.dianping.cat.service.ModelRequest;
-import com.dianping.cat.service.ModelResponse;
-import com.dianping.cat.system.config.HeartbeatDisplayPolicyManager;
+import com.dianping.cat.report.page.heartbeat.config.HeartbeatDisplayPolicyManager;
+import com.dianping.cat.report.page.heartbeat.service.HeartbeatReportService;
+import com.dianping.cat.report.service.ModelPeriod;
+import com.dianping.cat.report.service.ModelRequest;
+import com.dianping.cat.report.service.ModelResponse;
+import com.dianping.cat.report.service.ModelService;
 
 public class Handler implements PageHandler<Context> {
 	@Inject
@@ -44,7 +44,7 @@ public class Handler implements PageHandler<Context> {
 	private JspViewer m_jspViewer;
 
 	@Inject
-	private ReportServiceManager m_reportService;
+	private HeartbeatReportService m_reportService;
 
 	@Inject(type = ModelService.class, value = HeartbeatAnalyzer.ID)
 	private ModelService<HeartbeatReport> m_service;
@@ -66,7 +66,7 @@ public class Handler implements PageHandler<Context> {
 	private void buildHistoryGraph(Model model, Payload payload) {
 		Date start = new Date(payload.getDate() + 23 * TimeHelper.ONE_HOUR);
 		Date end = new Date(payload.getDate() + 24 * TimeHelper.ONE_HOUR);
-		HeartbeatReport report = m_reportService.queryHeartbeatReport(payload.getDomain(), start, end);
+		HeartbeatReport report = m_reportService.queryReport(payload.getDomain(), start, end);
 		List<String> extensionGroups = m_manager.sortGroupNames(extractExtensionGroups(report));
 
 		model.setExtensionGroups(extensionGroups);
@@ -150,6 +150,7 @@ public class Handler implements PageHandler<Context> {
 	private void normalize(Model model, Payload payload) {
 		String ipAddress = payload.getIpAddress();
 
+		model.setAction(payload.getAction());
 		model.setPage(ReportPage.HEARTBEAT);
 		if (StringUtils.isEmpty(ipAddress) || ipAddress.equals(Constants.ALL)) {
 			model.setIpAddress(Constants.ALL);

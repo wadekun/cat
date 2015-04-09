@@ -45,8 +45,6 @@ public class Constants {
 
 	public static final String REPORT_NET_TOPOLOGY = "NetTopology";
 
-	public static final String REPORT_ALERT = "alert";
-
 	public static final String BROKER_SERVICE = "broker-service";
 
 	public static final String METRIC_USER_MONITOR = "userMonitor";
@@ -63,8 +61,6 @@ public class Constants {
 
 	public static final String REPORT_NOTIFY = "dailyNotify";
 
-	public static final String HIGH_LOAD_REPORT = "highLoad";
-
 	public static final String REPORT_JAR = "jar";
 
 	public static final String APP_DATABASE_PRUNER = "appDatabasePruner";
@@ -74,5 +70,7 @@ public class Constants {
 	public static final String REPORT_SYSTEM = "system";
 
 	public static final String CMDB = "cmdb";
+
+	public static final String APP = "app";
 
 }

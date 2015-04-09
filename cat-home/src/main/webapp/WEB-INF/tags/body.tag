@@ -38,7 +38,7 @@
 						<b class="arrow fa fa-angle-down"></b>
 				</a> <b class="arrow"></b>
 					<ul class="submenu">
-						<li id="dashbord_system"><a href="/cat/r/dependency?op=metricDashboard&domain=${model.domain}">
+						<li id="dashbord_system"><a href="/cat/r/top?op=view&domain=${model.domain}">
 							<i class="menu-icon fa fa-caret-right"></i>报错大盘</a>
 							<b class="arrow"></b></li>
 						<li id="dashbord_metric"><a href="/cat/r/metric?op=dashboard&domain=${model.domain}">
@@ -60,10 +60,10 @@
 				</a> <b class="arrow"></b>
 					<ul class="submenu">
 						<li id="web_trend"><a href="/cat/r/web?domain=${model.domain}&ip=${model.ipAddress}&date=${model.date}&reportType=view&op=view">
-							<i class="menu-icon fa fa-caret-right"></i>访问趋势</a>
+							<i class="menu-icon fa fa-caret-right"></i>URL访问趋势</a>
 							<b class="arrow"></b></li>
 						<li id="web_problem"><a href="/cat/r/web?op=problem&domain=${model.domain}">
-							<i class="menu-icon fa fa-caret-right"></i>错误日志</a>
+							<i class="menu-icon fa fa-caret-right"></i>JS错误日志</a>
 							<b class="arrow"></b></li>
 					</ul>
 				</li>
@@ -74,20 +74,29 @@
 						<li id="trend"><a href="/cat/r/app?op=view&showActivity=false&domain=${model.domain}">
 							<i class="menu-icon fa fa-caret-right"></i>API访问趋势</a>
 							<b class="arrow"></b></li>
-						<li id="activity_trend"><a href="/cat/r/app?op=view&showActivity=true&domain=${model.domain}">
-							<i class="menu-icon fa fa-caret-right"></i>运营活动趋势</a>
-							<b class="arrow"></b></li>
-						<li id="speed"><a href="/cat/r/app?op=speed&domain=${model.domain}">
-							<i class="menu-icon fa fa-caret-right"></i>访问速度趋势</a>
-							<b class="arrow"></b></li>
 						<li id="accessPiechart"><a href="/cat/r/app?op=piechart&domain=${model.domain}">
 							<i class="menu-icon fa fa-caret-right"></i>访问量分布</a>
+							<b class="arrow"></b></li>
+						<li id="statistics"><a href="/cat/r/app?op=statistics&domain=${model.domain}&type=all">
+							<i class="menu-icon fa fa-caret-right"></i>报表统计</a>
+							<b class="arrow"></b></li>
+						<li id="connTrend"><a href="/cat/r/app?op=connLinechart&domain=${model.domain}">
+							<i class="menu-icon fa fa-caret-right"></i>长连访问趋势</a>
+							<b class="arrow"></b></li>
+						<li id="connPiechart"><a href="/cat/r/app?op=connPiechart&domain=${model.domain}">
+							<i class="menu-icon fa fa-caret-right"></i>长连访问分布</a>
 							<b class="arrow"></b></li>
 						<li id="crashLog"><a href="/cat/r/app?op=crashLog&domain=${model.domain}">
 							<i class="menu-icon fa fa-caret-right"></i>Crash日志</a>
 							<b class="arrow"></b></li>
 						<li id="traceLog"><a href="http://mobile-tracer-web01.nh/" target="_blank">
 							<i class="menu-icon fa fa-caret-right"></i>跟踪日志</a>
+							<b class="arrow"></b></li>
+						<li id="activity_trend"><a href="/cat/r/app?op=view&showActivity=true&domain=${model.domain}">
+							<i class="menu-icon fa fa-caret-right"></i>运营活动趋势</a>
+							<b class="arrow"></b></li>
+						<li id="speed"><a href="/cat/r/app?op=speed&domain=${model.domain}">
+							<i class="menu-icon fa fa-caret-right"></i>访问速度趋势</a>
 							<b class="arrow"></b></li>
 					</ul>
 				</li>
@@ -121,14 +130,14 @@
 						<span class="menu-text">Cross</span>
 					</a>
 				</li>		
-					<li id="Cache_report" class="hsub"><a href="#" class="dropdown-toggle"> <i class="menu-icon glyphicon glyphicon-flash"></i> <span class="menu-text">Cache</span>
+				<li id="Cache_report" class="hsub"><a href="#" class="dropdown-toggle"> <i class="menu-icon glyphicon glyphicon-flash"></i> <span class="menu-text">Cache</span>
 						<b class="arrow fa fa-angle-down"></b>
 					</a> <b class="arrow"></b>
 					<ul class="submenu">
-						<li id="cache_operation"><a href="/cat/r/storage?domain=memcached&ip=${model.ipAddress}&date=${model.date}&reportType=${payload.reportType}&op=cache">
+						<li id="cache_operation"><a href="/cat/r/storage?id=memcached&type=Cache&domain=${model.domain}&ip=${model.ipAddress}&date=${model.date}&reportType=${payload.reportType}">
 							<i class="menu-icon fa fa-caret-right"></i>访问趋势</a>
 							<b class="arrow"></b></li>
-						<li id="cache_info"><a href="/cat/r/cache?cache=${model.domain}&ip=${model.ipAddress}&date=${model.date}&reportType=${payload.reportType}&op=view">
+						<li id="cache_info"><a href="/cat/r/cache?domain=${model.domain}&ip=${model.ipAddress}&date=${model.date}&reportType=${payload.reportType}&op=view">
 							<i class="menu-icon fa fa-caret-right"></i>访问情况</a>
 							<b class="arrow"></b></li>
 					</ul>
@@ -137,7 +146,7 @@
 						<b class="arrow fa fa-angle-down"></b>
 					</a> <b class="arrow"></b>
 					<ul class="submenu">
-						<li id="database_operation"><a href="/cat/r/storage?domain=cat&ip=${model.ipAddress}&date=${model.date}&reportType=${payload.reportType}&op=database">
+						<li id="database_operation"><a href="/cat/r/storage?id=cat&domain=${model.domain}&ip=${model.ipAddress}&date=${model.date}&reportType=${payload.reportType}">
 							<i class="menu-icon fa fa-caret-right"></i>访问趋势</a>
 							<b class="arrow"></b></li>
 						<li id="database_system"><a href="/cat/r/database?domain=${model.domain}&ip=${model.ipAddress}&date=${model.date}&reportType=${payload.reportType}&op=view">

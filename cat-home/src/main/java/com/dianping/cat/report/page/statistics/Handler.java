@@ -16,6 +16,7 @@ import java.util.Set;
 import javax.servlet.ServletException;
 
 import org.unidal.lookup.annotation.Inject;
+import org.unidal.lookup.util.StringUtils;
 import org.unidal.tuple.Pair;
 import org.unidal.web.mvc.PageHandler;
 import org.unidal.web.mvc.annotation.InboundActionMeta;
@@ -26,8 +27,6 @@ import com.dianping.cat.Constants;
 import com.dianping.cat.core.dal.Project;
 import com.dianping.cat.helper.SortHelper;
 import com.dianping.cat.helper.TimeHelper;
-import com.dianping.cat.home.alert.report.entity.AlertReport;
-import com.dianping.cat.home.alert.report.entity.Exception;
 import com.dianping.cat.home.bug.entity.BugReport;
 import com.dianping.cat.home.bug.entity.Domain;
 import com.dianping.cat.home.bug.entity.ExceptionItem;
@@ -42,23 +41,43 @@ import com.dianping.cat.home.jar.entity.JarReport;
 import com.dianping.cat.home.service.entity.ServiceReport;
 import com.dianping.cat.home.system.entity.SystemReport;
 import com.dianping.cat.home.utilization.entity.UtilizationReport;
+import com.dianping.cat.mvc.PayloadNormalizer;
 import com.dianping.cat.report.ReportPage;
-import com.dianping.cat.report.page.PayloadNormalizer;
-import com.dianping.cat.report.service.ReportServiceManager;
 import com.dianping.cat.report.alert.summary.AlertSummaryExecutor;
-import com.dianping.cat.report.task.heavy.HeavyReportMerger.ServiceComparator;
-import com.dianping.cat.report.task.heavy.HeavyReportMerger.UrlComparator;
-import com.dianping.cat.report.task.jar.JarReportBuilder;
-import com.dianping.cat.report.task.system.SystemReportBuilder;
+import com.dianping.cat.report.page.statistics.config.BugConfigManager;
+import com.dianping.cat.report.page.statistics.service.BugReportService;
+import com.dianping.cat.report.page.statistics.service.HeavyReportService;
+import com.dianping.cat.report.page.statistics.service.JarReportService;
+import com.dianping.cat.report.page.statistics.service.ServiceReportService;
+import com.dianping.cat.report.page.statistics.service.SystemReportService;
+import com.dianping.cat.report.page.statistics.service.UtilizationReportService;
+import com.dianping.cat.report.page.statistics.task.heavy.HeavyReportMerger.ServiceComparator;
+import com.dianping.cat.report.page.statistics.task.heavy.HeavyReportMerger.UrlComparator;
+import com.dianping.cat.report.page.statistics.task.jar.JarReportBuilder;
+import com.dianping.cat.report.page.statistics.task.system.SystemReportBuilder;
 import com.dianping.cat.service.ProjectService;
-import com.dianping.cat.system.config.BugConfigManager;
 
 public class Handler implements PageHandler<Context> {
 	@Inject
 	private JspViewer m_jspViewer;
 
 	@Inject
-	private ReportServiceManager m_reportService;
+	private SystemReportService m_systemReportService;
+
+	@Inject
+	private BugReportService m_bugReportService;
+
+	@Inject
+	private HeavyReportService m_heavyReportService;
+
+	@Inject
+	private UtilizationReportService m_utilizationReportService;
+
+	@Inject
+	private ServiceReportService m_serviceReportService;
+
+	@Inject
+	private JarReportService m_jarReportService;
 
 	@Inject
 	private ProjectService m_projectService;
@@ -71,21 +90,6 @@ public class Handler implements PageHandler<Context> {
 
 	@Inject
 	private AlertSummaryExecutor m_executor;
-
-	private void builAlertDetails(Model model, Payload payload) {
-		AlertReport alertReport = queryAlertReport(payload);
-		List<com.dianping.cat.home.alert.report.entity.Exception> sortedExceptions = buildSortedAlertDetails(alertReport,
-		      payload.getDomain());
-
-		model.setAlertExceptions(sortedExceptions);
-	}
-
-	private void buildAlertInfo(Model model, Payload payload) {
-		AlertReport alertReport = queryAlertReport(payload);
-		model.setAlertReport(alertReport);
-		List<com.dianping.cat.home.alert.report.entity.Domain> sortedDomains = buildSortedAlertInfo(alertReport, model);
-		model.setAlertDomains(sortedDomains);
-	}
 
 	private void buildBugInfo(Model model, Payload payload) {
 		BugReport bugReport = queryBugReport(payload);
@@ -123,50 +127,6 @@ public class Handler implements PageHandler<Context> {
 		model.setServiceReport(serviceReport);
 	}
 
-	private List<com.dianping.cat.home.alert.report.entity.Exception> buildSortedAlertDetails(AlertReport report,
-	      String domainName) {
-		List<com.dianping.cat.home.alert.report.entity.Exception> exceptions = new ArrayList<com.dianping.cat.home.alert.report.entity.Exception>();
-		com.dianping.cat.home.alert.report.entity.Domain domain = report.getDomains().get(domainName);
-
-		if (domain != null && !domain.getExceptions().isEmpty()) {
-			exceptions = new ArrayList<com.dianping.cat.home.alert.report.entity.Exception>(domain.getExceptions()
-			      .values());
-			Comparator<com.dianping.cat.home.alert.report.entity.Exception> exceptionCompator = new Comparator<com.dianping.cat.home.alert.report.entity.Exception>() {
-
-				@Override
-				public int compare(Exception o1, Exception o2) {
-					int gap = o2.getErrorNumber() - o1.getErrorNumber();
-
-					return gap == 0 ? o2.getWarnNumber() - o1.getWarnNumber() : gap;
-				}
-			};
-
-			Collections.sort(exceptions, exceptionCompator);
-		}
-		return exceptions;
-	}
-
-	private List<com.dianping.cat.home.alert.report.entity.Domain> buildSortedAlertInfo(AlertReport report, Model model) {
-		List<com.dianping.cat.home.alert.report.entity.Domain> domains = new ArrayList<com.dianping.cat.home.alert.report.entity.Domain>();
-
-		if (!report.getDomains().values().isEmpty()) {
-			domains = new ArrayList<com.dianping.cat.home.alert.report.entity.Domain>(report.getDomains().values());
-			Comparator<com.dianping.cat.home.alert.report.entity.Domain> domainCompator = new Comparator<com.dianping.cat.home.alert.report.entity.Domain>() {
-
-				@Override
-				public int compare(com.dianping.cat.home.alert.report.entity.Domain o1,
-				      com.dianping.cat.home.alert.report.entity.Domain o2) {
-					int gap = o2.getErrorNumber() - o1.getErrorNumber();
-
-					return gap == 0 ? o2.getWarnNumber() - o1.getWarnNumber() : gap;
-				}
-			};
-
-			Collections.sort(domains, domainCompator);
-		}
-		return domains;
-	}
-
 	private void buildSortedHeavyInfo(Model model, HeavyReport heavyReport) {
 		HeavyCall heavyCall = heavyReport.getHeavyCall();
 		if (heavyCall != null) {
@@ -201,6 +161,15 @@ public class Handler implements PageHandler<Context> {
 		}
 	}
 
+	private void buildSystemReport(Model model, Payload payload) {
+		Date startDate = payload.getDay();
+		Date endDate = TimeHelper.addDays(startDate, 1);
+		SystemReport systemReport = m_systemReportService.queryReport(Constants.CAT, startDate, endDate);
+
+		model.setSystemReport(systemReport);
+		model.setKeys(SystemReportBuilder.KEYS);
+	}
+
 	private void buildUtilizationInfo(Model model, Payload payload) {
 		UtilizationReport utilizationReport = queryUtilizationReport(payload);
 		Collection<com.dianping.cat.home.utilization.entity.Domain> dUList = utilizationReport.getDomains().values();
@@ -232,7 +201,10 @@ public class Handler implements PageHandler<Context> {
 	public void handleOutbound(Context ctx) throws ServletException, IOException {
 		Model model = new Model(ctx);
 		Payload payload = ctx.getPayload();
+
 		m_normalizePayload.normalize(model, payload);
+		model.setAction(payload.getAction());
+
 		Action action = payload.getAction();
 
 		switch (action) {
@@ -253,18 +225,13 @@ public class Handler implements PageHandler<Context> {
 		case UTILIZATION_HISTORY_REPORT:
 			buildUtilizationInfo(model, payload);
 			break;
-		case ALERT_HISTORY_REPORT:
-		case ALERT_REPORT:
-			buildAlertInfo(model, payload);
-			break;
-		case ALERT_REPORT_DETAIL:
-		case ALERT_HISTORY_REPORT_DETAIL:
-			builAlertDetails(model, payload);
-			break;
 		case ALERT_SUMMARY:
-			String summaryContent = m_executor.execute(payload.getSummarydomain(), payload.getSummarytime(),
-			      payload.getSummaryemails());
-			model.setSummaryContent(summaryContent);
+			String domain = payload.getSummarydomain();
+
+			if (StringUtils.isNotEmpty(domain)) {
+				String summaryContent = m_executor.execute(domain, payload.getSummarytime(), payload.getSummaryemails());
+				model.setSummaryContent(summaryContent);
+			}
 			break;
 		case JAR_REPORT:
 			buildJarInfo(model, payload);
@@ -277,49 +244,34 @@ public class Handler implements PageHandler<Context> {
 		m_jspViewer.view(ctx, model);
 	}
 
-	private void buildSystemReport(Model model, Payload payload) {
-		Date startDate = payload.getDay();
-		Date endDate = TimeHelper.addDays(startDate, 1);
-		SystemReport systemReport = m_reportService.querySystemReport(Constants.CAT, startDate, endDate);
-
-		model.setSystemReport(systemReport);
-		model.setKeys(SystemReportBuilder.KEYS);
-	}
-
 	private boolean isBug(String domain, String exception) {
 		Set<String> bugConfig = m_bugConfigManager.queryBugConfigsByDomain(domain);
 
 		return !bugConfig.contains(exception);
 	}
 
-	private AlertReport queryAlertReport(Payload payload) {
-		Pair<Date, Date> pair = queryStartEndTime(payload);
-
-		return m_reportService.queryAlertReport(Constants.CAT, pair.getKey(), pair.getValue());
-	}
-
 	private BugReport queryBugReport(Payload payload) {
 		Pair<Date, Date> pair = queryStartEndTime(payload);
 
-		return m_reportService.queryBugReport(Constants.CAT, pair.getKey(), pair.getValue());
+		return m_bugReportService.queryReport(Constants.CAT, pair.getKey(), pair.getValue());
 	}
 
 	private HeavyReport queryHeavyReport(Payload payload) {
 		Pair<Date, Date> pair = queryStartEndTime(payload);
 
-		return m_reportService.queryHeavyReport(Constants.CAT, pair.getKey(), pair.getValue());
+		return m_heavyReportService.queryReport(Constants.CAT, pair.getKey(), pair.getValue());
 	}
 
 	private JarReport queryJarReport(Payload payload) {
 		Pair<Date, Date> pair = queryStartEndTime(payload);
 
-		return m_reportService.queryJarReport(Constants.CAT, pair.getKey(), pair.getValue());
+		return m_jarReportService.queryReport(Constants.CAT, pair.getKey(), pair.getValue());
 	}
 
 	private ServiceReport queryServiceReport(Payload payload) {
 		Pair<Date, Date> pair = queryStartEndTime(payload);
 
-		return m_reportService.queryServiceReport(Constants.CAT, pair.getKey(), pair.getValue());
+		return m_serviceReportService.queryReport(Constants.CAT, pair.getKey(), pair.getValue());
 	}
 
 	private Pair<Date, Date> queryStartEndTime(Payload payload) {
@@ -344,7 +296,7 @@ public class Handler implements PageHandler<Context> {
 
 	private UtilizationReport queryUtilizationReport(Payload payload) {
 		Pair<Date, Date> pair = queryStartEndTime(payload);
-		UtilizationReport report = m_reportService.queryUtilizationReport(Constants.CAT, pair.getKey(), pair.getValue());
+		UtilizationReport report = m_utilizationReportService.queryReport(Constants.CAT, pair.getKey(), pair.getValue());
 		Collection<com.dianping.cat.home.utilization.entity.Domain> domains = report.getDomains().values();
 
 		for (com.dianping.cat.home.utilization.entity.Domain d : domains) {

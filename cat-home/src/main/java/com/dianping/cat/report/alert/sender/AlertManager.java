@@ -21,15 +21,15 @@ import org.unidal.lookup.annotation.Inject;
 import org.unidal.tuple.Pair;
 
 import com.dianping.cat.Cat;
-import com.dianping.cat.configuration.ServerConfigManager;
+import com.dianping.cat.config.server.ServerConfigManager;
 import com.dianping.cat.message.Event;
 import com.dianping.cat.report.alert.AlertType;
+import com.dianping.cat.report.alert.sender.config.AlertPolicyManager;
 import com.dianping.cat.report.alert.sender.decorator.DecoratorManager;
 import com.dianping.cat.report.alert.sender.receiver.ContactorManager;
 import com.dianping.cat.report.alert.sender.sender.SenderManager;
 import com.dianping.cat.report.alert.sender.spliter.SpliterManager;
 import com.dianping.cat.report.alert.service.AlertEntityService;
-import com.dianping.cat.system.config.AlertPolicyManager;
 
 public class AlertManager implements Initializable {
 
@@ -100,7 +100,7 @@ public class AlertManager implements Initializable {
 			return "transaction告警";
 		case DataBase:
 			return "数据库系统告警";
-		case StorageDatabase:
+		case STORAGE_SQL:
 			return "数据库访问告警";
 		}
 		return type;

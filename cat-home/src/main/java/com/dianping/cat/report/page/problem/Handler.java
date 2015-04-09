@@ -19,20 +19,24 @@ import org.unidal.web.mvc.annotation.OutboundActionMeta;
 import org.unidal.web.mvc.annotation.PayloadMeta;
 
 import com.dianping.cat.Constants;
-import com.dianping.cat.configuration.ServerConfigManager;
+import com.dianping.cat.config.server.ServerConfigManager;
 import com.dianping.cat.configuration.server.entity.Domain;
 import com.dianping.cat.consumer.problem.ProblemAnalyzer;
 import com.dianping.cat.consumer.problem.model.entity.Machine;
 import com.dianping.cat.consumer.problem.model.entity.ProblemReport;
 import com.dianping.cat.helper.JsonBuilder;
+import com.dianping.cat.mvc.PayloadNormalizer;
 import com.dianping.cat.report.ReportPage;
-import com.dianping.cat.report.page.PayloadNormalizer;
-import com.dianping.cat.report.page.model.spi.ModelService;
-import com.dianping.cat.report.service.ReportServiceManager;
-import com.dianping.cat.service.ModelPeriod;
-import com.dianping.cat.service.ModelRequest;
-import com.dianping.cat.service.ModelResponse;
-import com.dianping.cat.system.config.DomainGroupConfigManager;
+import com.dianping.cat.report.page.DomainGroupConfigManager;
+import com.dianping.cat.report.page.problem.service.ProblemReportService;
+import com.dianping.cat.report.page.problem.transform.DetailStatistics;
+import com.dianping.cat.report.page.problem.transform.HourlyLineChartVisitor;
+import com.dianping.cat.report.page.problem.transform.PieGraphChartVisitor;
+import com.dianping.cat.report.page.problem.transform.ProblemStatistics;
+import com.dianping.cat.report.service.ModelPeriod;
+import com.dianping.cat.report.service.ModelRequest;
+import com.dianping.cat.report.service.ModelResponse;
+import com.dianping.cat.report.service.ModelService;
 
 public class Handler implements PageHandler<Context> {
 
@@ -50,7 +54,7 @@ public class Handler implements PageHandler<Context> {
 	private ServerConfigManager m_manager;
 
 	@Inject
-	private ReportServiceManager m_reportService;
+	private ProblemReportService m_reportService;
 
 	@Inject(type = ModelService.class, value = ProblemAnalyzer.ID)
 	private ModelService<ProblemReport> m_service;
@@ -276,6 +280,7 @@ public class Handler implements PageHandler<Context> {
 	private void normalize(Model model, Payload payload) {
 		setDefaultThreshold(model, payload);
 		model.setPage(ReportPage.PROBLEM);
+		model.setAction(payload.getAction());
 		m_normalizePayload.normalize(model, payload);
 	}
 
@@ -310,7 +315,7 @@ public class Handler implements PageHandler<Context> {
 
 	private void showDetail(Model model, Payload payload) {
 		String ipAddress = payload.getIpAddress();
-		model.setLongDate(payload.getDate());
+		model.setDate(payload.getDate());
 		model.setIpAddress(ipAddress);
 		model.setGroupName(payload.getGroupName());
 		model.setCurrentMinute(payload.getMinute());
@@ -332,9 +337,9 @@ public class Handler implements PageHandler<Context> {
 	private ProblemReport showHourlyReport(Model model, Payload payload) {
 		ModelPeriod period = payload.getPeriod();
 		if (period.isFuture()) {
-			model.setLongDate(payload.getCurrentDate());
+			model.setDate(payload.getCurrentDate());
 		} else {
-			model.setLongDate(payload.getDate());
+			model.setDate(payload.getDate());
 		}
 
 		if (period.isCurrent() || period.isFuture()) {
@@ -360,7 +365,7 @@ public class Handler implements PageHandler<Context> {
 		String domain = model.getDomain();
 		Date start = payload.getHistoryStartDate();
 		Date end = payload.getHistoryEndDate();
-		ProblemReport problemReport = m_reportService.queryProblemReport(domain, start, end);
+		ProblemReport problemReport = m_reportService.queryReport(domain, start, end);
 
 		return problemReport;
 	}

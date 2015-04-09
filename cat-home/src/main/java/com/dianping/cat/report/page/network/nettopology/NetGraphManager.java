@@ -19,7 +19,7 @@ import org.unidal.tuple.Pair;
 
 import com.dianping.cat.Cat;
 import com.dianping.cat.Constants;
-import com.dianping.cat.configuration.ServerConfigManager;
+import com.dianping.cat.config.server.ServerConfigManager;
 import com.dianping.cat.consumer.metric.MetricAnalyzer;
 import com.dianping.cat.consumer.metric.model.entity.MetricReport;
 import com.dianping.cat.helper.JsonBuilder;
@@ -32,12 +32,12 @@ import com.dianping.cat.home.network.entity.NetTopology;
 import com.dianping.cat.message.Transaction;
 import com.dianping.cat.report.alert.AlertInfo;
 import com.dianping.cat.report.alert.AlertInfo.AlertMetric;
-import com.dianping.cat.report.page.model.spi.ModelService;
-import com.dianping.cat.report.service.ReportServiceManager;
-import com.dianping.cat.service.ModelPeriod;
-import com.dianping.cat.service.ModelRequest;
-import com.dianping.cat.service.ModelResponse;
-import com.dianping.cat.system.config.NetGraphConfigManager;
+import com.dianping.cat.report.page.network.config.NetGraphConfigManager;
+import com.dianping.cat.report.page.network.service.NetTopologyReportService;
+import com.dianping.cat.report.service.ModelPeriod;
+import com.dianping.cat.report.service.ModelRequest;
+import com.dianping.cat.report.service.ModelResponse;
+import com.dianping.cat.report.service.ModelService;
 
 public class NetGraphManager implements Initializable, LogEnabled {
 
@@ -48,7 +48,7 @@ public class NetGraphManager implements Initializable, LogEnabled {
 	private ServerConfigManager m_serverConfigManager;
 
 	@Inject
-	private ReportServiceManager m_reportService;
+	private NetTopologyReportService m_reportService;
 
 	@Inject
 	private NetGraphBuilder m_netGraphBuilder;
@@ -85,8 +85,8 @@ public class NetGraphManager implements Initializable, LogEnabled {
 		} else if (startTime == currentHours - TimeHelper.ONE_HOUR) {
 			netGraphSet = m_lastNetGraphSet;
 		} else {
-			netGraphSet = m_reportService.queryNetTopologyReport(Constants.CAT, start, new Date(start.getTime()
-			      + TimeHelper.ONE_HOUR));
+			netGraphSet = m_reportService.queryReport(Constants.CAT, start,
+			      new Date(start.getTime() + TimeHelper.ONE_HOUR));
 		}
 
 		if (netGraphSet != null) {
@@ -147,7 +147,7 @@ public class NetGraphManager implements Initializable, LogEnabled {
 
 		@Override
 		public void run() {
-			boolean active = true;
+			boolean active = TimeHelper.sleepToNextMinute();
 
 			while (active) {
 				Transaction t = Cat.newTransaction("ReloadTask", "NetGraph");

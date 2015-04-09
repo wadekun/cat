@@ -8,12 +8,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.unidal.lookup.util.StringUtils;
+import org.unidal.lookup.ContainerLoader;
 import org.unidal.web.mvc.ViewModel;
 
+import com.dianping.cat.Cat;
+import com.dianping.cat.Constants;
+import com.dianping.cat.config.app.AppConfigManager;
 import com.dianping.cat.configuration.aggreation.model.entity.AggregationRule;
 import com.dianping.cat.configuration.app.entity.Code;
 import com.dianping.cat.configuration.app.entity.Command;
+import com.dianping.cat.configuration.app.entity.ConfigItem;
 import com.dianping.cat.configuration.app.entity.Item;
 import com.dianping.cat.configuration.app.speed.entity.Speed;
 import com.dianping.cat.configuration.url.pattern.entity.PatternItem;
@@ -149,8 +153,21 @@ public class Model extends ViewModel<SystemPage, Action, Context> {
 
 	private com.dianping.cat.home.group.entity.Domain m_groupDomain;
 
+	private List<String> m_validatePaths;
+
+	private List<String> m_invalidatePaths;
+
+	private AppConfigManager m_appConfigManager;
+
+	private Item m_appItem;
+
 	public Model(Context ctx) {
 		super(ctx);
+		try {
+			m_appConfigManager = ContainerLoader.getDefaultContainer().lookup(AppConfigManager.class);
+		} catch (Exception e) {
+			Cat.logError(e);
+		}
 	}
 
 	public void buildEdgeInfo() {
@@ -169,12 +186,24 @@ public class Model extends ViewModel<SystemPage, Action, Context> {
 		}
 	}
 
+	public Map<String, List<Command>> getActivityCommands() {
+		return m_appConfigManager.queryDomain2Commands(true);
+	}
+
 	public AggregationRule getAggregationRule() {
 		return m_aggregationRule;
 	}
 
 	public List<AggregationRule> getAggregationRules() {
 		return m_aggregationRules;
+	}
+
+	public Map<String, List<Command>> getApiCommands() {
+		return m_appConfigManager.queryDomain2Commands(false);
+	}
+
+	public Item getAppItem() {
+		return m_appItem;
 	}
 
 	public String getBug() {
@@ -201,34 +230,8 @@ public class Model extends ViewModel<SystemPage, Action, Context> {
 		return m_codes;
 	}
 
-	public Map<Integer, List<Code>> getCommand() {
-		Map<Integer, List<Code>> maps = new LinkedHashMap<Integer, List<Code>>();
-
-		for (Command item : m_commands) {
-			List<Code> items = maps.get(item.getId());
-
-			if (items == null) {
-				items = new ArrayList<Code>();
-				maps.put(item.getId(), items);
-			}
-			items.addAll(item.getCodes().values());
-		}
-		return maps;
-	}
-
 	public String getCommandJson() {
-		Map<Integer, List<Code>> maps = new LinkedHashMap<Integer, List<Code>>();
-
-		for (Command item : m_commands) {
-			List<Code> items = maps.get(item.getId());
-
-			if (items == null) {
-				items = new ArrayList<Code>();
-				maps.put(item.getId(), items);
-			}
-			items.addAll(item.getCodes().values());
-		}
-		return new JsonBuilder().toJson(maps);
+		return new JsonBuilder().toJson(m_appConfigManager.queryCommand2Codes());
 	}
 
 	public List<Command> getCommands() {
@@ -241,6 +244,10 @@ public class Model extends ViewModel<SystemPage, Action, Context> {
 
 	public String getConfigHeader() {
 		return m_configHeader;
+	}
+
+	public Map<String, ConfigItem> getConfigItems() {
+		return m_appConfigManager.getConfig().getConfigItems();
 	}
 
 	public Map<Integer, Item> getConnectionTypes() {
@@ -265,22 +272,11 @@ public class Model extends ViewModel<SystemPage, Action, Context> {
 	}
 
 	public String getDomain2CommandsJson() {
-		Map<String, List<Command>> map = new LinkedHashMap<String, List<Command>>();
+		Map<String, List<Command>> results = new LinkedHashMap<String, List<Command>>();
 
-		for (Command command : m_commands) {
-			String domain = command.getDomain();
-			if (StringUtils.isEmpty(domain)) {
-				domain = "default";
-			}
-			List<Command> commands = map.get(domain);
-
-			if (commands == null) {
-				commands = new ArrayList<Command>();
-				map.put(domain, commands);
-			}
-			commands.add(command);
-		}
-		return new JsonBuilder().toJson(map);
+		results.put(Constants.ALL, m_appConfigManager.queryCommands());
+		results.putAll(m_appConfigManager.queryDomain2Commands());
+		return new JsonBuilder().toJson(results);
 	}
 
 	public DomainConfig getDomainConfig() {
@@ -375,6 +371,10 @@ public class Model extends ViewModel<SystemPage, Action, Context> {
 
 	public String getId() {
 		return m_id;
+	}
+
+	public List<String> getInvalidatePaths() {
+		return m_invalidatePaths;
 	}
 
 	public String getIpAddress() {
@@ -481,6 +481,10 @@ public class Model extends ViewModel<SystemPage, Action, Context> {
 		return m_updateCommand;
 	}
 
+	public List<String> getValidatePaths() {
+		return m_validatePaths;
+	}
+
 	public Map<Integer, Item> getVersions() {
 		return m_versions;
 	}
@@ -491,6 +495,10 @@ public class Model extends ViewModel<SystemPage, Action, Context> {
 
 	public void setAggregationRules(List<AggregationRule> aggregationRules) {
 		m_aggregationRules = aggregationRules;
+	}
+
+	public void setAppItem(Item appItem) {
+		m_appItem = appItem;
 	}
 
 	public void setBug(String bug) {
@@ -597,6 +605,10 @@ public class Model extends ViewModel<SystemPage, Action, Context> {
 		m_id = id;
 	}
 
+	public void setInvalidatePaths(List<String> invalidatePaths) {
+		m_invalidatePaths = invalidatePaths;
+	}
+
 	public void setMetricItemConfig(MetricItemConfig metricItemConfig) {
 		m_metricItemConfig = metricItemConfig;
 	}
@@ -697,6 +709,10 @@ public class Model extends ViewModel<SystemPage, Action, Context> {
 		m_updateCommand = updateCommand;
 	}
 
+	public void setValidatePaths(List<String> validatePaths) {
+		m_validatePaths = validatePaths;
+	}
+
 	public void setVersions(Map<Integer, Item> versions) {
 		m_versions = versions;
 	}
@@ -719,5 +735,4 @@ public class Model extends ViewModel<SystemPage, Action, Context> {
 			return m_nodeConfig;
 		}
 	}
-
 }

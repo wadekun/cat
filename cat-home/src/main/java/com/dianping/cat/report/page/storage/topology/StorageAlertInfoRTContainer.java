@@ -1,9 +1,11 @@
 package com.dianping.cat.report.page.storage.topology;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import com.dianping.cat.helper.TimeHelper;
 import com.dianping.cat.home.storage.alert.entity.StorageAlertInfo;
@@ -13,19 +15,24 @@ public class StorageAlertInfoRTContainer {
 
 	public static final int SIZE = 60;
 
-	private Map<Long, StorageAlertInfo> m_alertInfos = new LinkedHashMap<Long, StorageAlertInfo>() {
+	private Map<Long, StorageAlertInfo> m_alertInfos = Collections
+	      .synchronizedMap(new LinkedHashMap<Long, StorageAlertInfo>() {
 
-		private static final long serialVersionUID = 1L;
+		      private static final long serialVersionUID = 1L;
 
-		@Override
-		protected boolean removeEldestEntry(Entry<Long, StorageAlertInfo> eldest) {
-			return size() > SIZE;
-		}
+		      @Override
+		      protected boolean removeEldestEntry(Entry<Long, StorageAlertInfo> eldest) {
+			      return size() > SIZE;
+		      }
 
-	};
+	      });
 
-	public StorageAlertInfo find(long time, int minute) {
-		return m_alertInfos.get(time + minute * TimeHelper.ONE_MINUTE);
+	public StorageAlertInfo find(long time) {
+		return m_alertInfos.get(time);
+	}
+
+	public Set<Long> queryExistingMinutes() {
+		return m_alertInfos.keySet();
 	}
 
 	public StorageAlertInfo findOrCreate(long time) {
@@ -50,11 +57,11 @@ public class StorageAlertInfoRTContainer {
 	}
 
 	public StorageAlertInfo makeAlertInfo(String id, Date start) {
-		StorageAlertInfo report = new StorageAlertInfo(id);
+		StorageAlertInfo alertInfo = new StorageAlertInfo(id);
 
-		report.setStartTime(start);
-		report.setEndTime(new Date(start.getTime() + TimeHelper.ONE_MINUTE - 1));
-		return report;
+		alertInfo.setStartTime(start);
+		alertInfo.setEndTime(new Date(start.getTime() + TimeHelper.ONE_MINUTE - 1));
+		return alertInfo;
 	}
 
 }

@@ -219,9 +219,9 @@ public class Handler implements PageHandler<Context> {
 
 		case APP_NAME_CHECK:
 		case APP_LIST:
-		case APP_UPDATE:
-		case APP_SUBMIT:
-		case APP_PAGE_DELETE:
+		case APP_COMMMAND_UPDATE:
+		case APP_COMMAND_SUBMIT:
+		case APP_COMMAND_DELETE:
 		case APP_CODE_UPDATE:
 		case APP_CODE_SUBMIT:
 		case APP_CODE_ADD:
@@ -236,6 +236,11 @@ public class Handler implements PageHandler<Context> {
 		case APP_RULE_ADD_OR_UPDATE_SUBMIT:
 		case APP_RULE_DELETE:
 		case APP_COMPARISON_CONFIG_UPDATE:
+		case APP_RULE_BATCH_UPDATE:
+		case APP_CONSTANT_ADD:
+		case APP_CONSTANT_UPDATE:
+		case APP_CONSTATN_DELETE:
+		case APP_CONSTATN_SUBMIT:
 			m_appConfigProcessor.process(action, payload, model);
 			break;
 

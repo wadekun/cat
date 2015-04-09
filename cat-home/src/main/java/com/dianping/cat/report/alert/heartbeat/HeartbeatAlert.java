@@ -14,7 +14,7 @@ import org.unidal.tuple.Pair;
 
 import com.dianping.cat.Cat;
 import com.dianping.cat.Constants;
-import com.dianping.cat.configuration.ServerConfigManager;
+import com.dianping.cat.config.server.ServerConfigManager;
 import com.dianping.cat.consumer.company.model.entity.ProductLine;
 import com.dianping.cat.consumer.heartbeat.HeartbeatAnalyzer;
 import com.dianping.cat.consumer.heartbeat.model.entity.Detail;
@@ -28,16 +28,15 @@ import com.dianping.cat.helper.TimeHelper;
 import com.dianping.cat.home.rule.entity.Condition;
 import com.dianping.cat.home.rule.entity.Config;
 import com.dianping.cat.message.Transaction;
-import com.dianping.cat.report.page.model.spi.ModelService;
+import com.dianping.cat.report.page.heartbeat.config.HeartbeatDisplayPolicyManager;
+import com.dianping.cat.report.service.ModelRequest;
+import com.dianping.cat.report.service.ModelResponse;
+import com.dianping.cat.report.service.ModelService;
 import com.dianping.cat.report.alert.AlertResultEntity;
 import com.dianping.cat.report.alert.AlertType;
 import com.dianping.cat.report.alert.BaseAlert;
+import com.dianping.cat.report.alert.config.BaseRuleConfigManager;
 import com.dianping.cat.report.alert.sender.AlertEntity;
-import com.dianping.cat.service.ModelRequest;
-import com.dianping.cat.service.ModelResponse;
-import com.dianping.cat.system.config.BaseRuleConfigManager;
-import com.dianping.cat.system.config.HeartbeatDisplayPolicyManager;
-import com.dianping.cat.system.config.HeartbeatRuleConfigManager;
 
 public class HeartbeatAlert extends BaseAlert {
 

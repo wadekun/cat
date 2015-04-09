@@ -14,8 +14,8 @@ import com.dianping.cat.message.Event;
 import com.dianping.cat.message.Message;
 import com.dianping.cat.message.Transaction;
 import com.dianping.cat.message.spi.MessageTree;
-import com.dianping.cat.service.DefaultReportManager.StoragePolicy;
-import com.dianping.cat.service.ReportManager;
+import com.dianping.cat.report.ReportManager;
+import com.dianping.cat.report.DefaultReportManager.StoragePolicy;
 
 public class StorageAnalyzer extends AbstractMessageAnalyzer<StorageReport> implements LogEnabled {
 
@@ -38,7 +38,7 @@ public class StorageAnalyzer extends AbstractMessageAnalyzer<StorageReport> impl
 	private static final long LONG_CACHE_THRESHOLD = 50;
 
 	@Override
-	public void doCheckpoint(boolean atEnd) {
+	public synchronized void doCheckpoint(boolean atEnd) {
 		if (atEnd && !isLocalMode()) {
 			m_reportManager.storeHourlyReports(getStartTime(), StoragePolicy.FILE_AND_DB);
 			m_databaseParser.showErrorCon();
@@ -60,6 +60,11 @@ public class StorageAnalyzer extends AbstractMessageAnalyzer<StorageReport> impl
 		m_updater.updateStorageIds(id, m_reportManager.getDomains(period), report);
 		return report;
 	}
+
+	@Override
+   protected void loadReports() {
+		m_reportManager.loadHourlyReports(getStartTime(), StoragePolicy.FILE);
+   }
 
 	@Override
 	protected void process(MessageTree tree) {
@@ -107,7 +112,7 @@ public class StorageAnalyzer extends AbstractMessageAnalyzer<StorageReport> impl
 
 	private void processSQLTransaction(MessageTree tree, Transaction t) {
 		String databaseName = null;
-		String method = null;
+		String method = "select";
 		String ip = null;
 		String domain = tree.getDomain();
 		List<Message> messages = t.getChildren();
@@ -129,7 +134,7 @@ public class StorageAnalyzer extends AbstractMessageAnalyzer<StorageReport> impl
 				}
 			}
 		}
-		if (databaseName != null && method != null && ip != null) {
+		if (databaseName != null && ip != null) {
 			String id = querySQLId(databaseName);
 			StorageReport report = m_reportManager.getHourlyReport(getStartTime(), id, true);
 			StorageUpdateParam param = new StorageUpdateParam();
@@ -148,7 +153,7 @@ public class StorageAnalyzer extends AbstractMessageAnalyzer<StorageReport> impl
 		} else if (m_serverConfigManager.isCacheTransaction(type)) {
 			processCacheTransaction(tree, t);
 		}
-		
+
 		List<Message> children = t.getChildren();
 
 		for (Message child : children) {
@@ -165,4 +170,5 @@ public class StorageAnalyzer extends AbstractMessageAnalyzer<StorageReport> impl
 	private String querySQLId(String name) {
 		return name + "-SQL";
 	}
+	
 }

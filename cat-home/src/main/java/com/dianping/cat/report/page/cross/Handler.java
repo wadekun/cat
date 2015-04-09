@@ -14,23 +14,23 @@ import org.unidal.web.mvc.annotation.PayloadMeta;
 
 import com.dianping.cat.consumer.cross.CrossAnalyzer;
 import com.dianping.cat.consumer.cross.model.entity.CrossReport;
+import com.dianping.cat.mvc.PayloadNormalizer;
 import com.dianping.cat.report.ReportPage;
-import com.dianping.cat.report.page.PayloadNormalizer;
 import com.dianping.cat.report.page.cross.display.HostInfo;
 import com.dianping.cat.report.page.cross.display.MethodInfo;
 import com.dianping.cat.report.page.cross.display.ProjectInfo;
-import com.dianping.cat.report.page.model.spi.ModelService;
-import com.dianping.cat.report.service.ReportServiceManager;
+import com.dianping.cat.report.page.cross.service.CrossReportService;
+import com.dianping.cat.report.service.ModelRequest;
+import com.dianping.cat.report.service.ModelResponse;
+import com.dianping.cat.report.service.ModelService;
 import com.dianping.cat.service.HostinfoService;
-import com.dianping.cat.service.ModelRequest;
-import com.dianping.cat.service.ModelResponse;
 
 public class Handler implements PageHandler<Context> {
 	@Inject
 	private JspViewer m_jspViewer;
 
 	@Inject
-	private ReportServiceManager m_reportService;
+	private CrossReportService m_reportService;
 
 	@Inject
 	private PayloadNormalizer m_normalizePayload;
@@ -63,7 +63,7 @@ public class Handler implements PageHandler<Context> {
 		Date start = payload.getHistoryStartDate();
 		Date end = payload.getHistoryEndDate();
 
-		return m_reportService.queryCrossReport(domain, start, end);
+		return m_reportService.queryReport(domain, start, end);
 	}
 
 	@Override
@@ -174,6 +174,7 @@ public class Handler implements PageHandler<Context> {
 
 	private void normalize(Model model, Payload payload) {
 		model.setPage(ReportPage.CROSS);
+		model.setAction(payload.getAction());
 		m_normalizePayload.normalize(model, payload);
 		model.setCallSort(payload.getCallSort());
 		model.setServiceSort(payload.getServiceSort());
